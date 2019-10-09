@@ -1,0 +1,5 @@
+venv/
+.idea/
+*.template
+*.in
+*.go
