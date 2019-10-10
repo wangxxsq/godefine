@@ -24,10 +24,10 @@ def parse_args():
     parser = argparse.ArgumentParser(description="godefine")
     group = parser.add_argument_group()
     #
-    group.add_argument('-i', '--input_vars', type=typing.AnyStr, help='use var is specified file')
-    group.add_argument('-v', '--vars', type=typing.AnyStr, help='use var in command line', nargs='*')
-    group.add_argument('-t', '--template', type=typing.AnyStr, help='template file', required=True)
-    group.add_argument('-o', '--output', type=typing.AnyStr, help='output file name', required=True)
+    group.add_argument('-i', '--input_vars', type=str, help='use var is specified file')
+    group.add_argument('-v', '--vars', type=str, help='use var in command line', nargs='*')
+    group.add_argument('-t', '--template', type=str, help='template file', required=True)
+    group.add_argument('-o', '--output', type=str, help='output file name', required=True)
     group.add_argument('--dryrun',
                        default=False,
                        action='store_true',
@@ -82,7 +82,7 @@ def args_line2dict(argv: typing.AnyStr, output_dict: typing.Dict):
     output_dict[r[0]] = r[1]
 
 
-def generate_output(input_file: typing.AnyStr, output_file: typing.AnyStr, var_dict: typing.typing.Dict):
+def generate_output(input_file: typing.AnyStr, output_file: typing.AnyStr, var_dict: typing.Dict):
     try:
         with open(input_file, 'r')as ifile:
             ifile_content = fread_all(ifile)
