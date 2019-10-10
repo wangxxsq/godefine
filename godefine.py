@@ -16,7 +16,7 @@ try:
     from tabulate import tabulate
 except ImportError:
     print("module: `tabulate` not load, run `pip install tabulate` to install...", end='\n\n', file=sys.stderr)
-    exit(4)
+    exit(1)
 
 
 # parse program startup args
@@ -130,7 +130,7 @@ def main():
                     todo_list.append(result_dict)
     except Exception as e:
         print("❗❗❗open file:%s filed, reason:%s" % (cmd_args.template, e))
-        exit(1)
+        exit(3)
 
     vars_not_ready = []
     #
@@ -169,7 +169,7 @@ def main():
     if len(vars_not_ready) != 0:
         print("❗❗❗error: you must specify manual:", ','.join(vars_not_ready))
         if not cmd_args.force:
-            exit(3)
+            exit(4)
         print("❗❗❗warning: some vars not specified, force generate output...")
     #
     if not cmd_args.dryrun:
