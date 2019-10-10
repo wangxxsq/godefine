@@ -4,6 +4,7 @@ import re
 import argparse
 import os
 import sys
+import typing
 
 try:
     import wcwidth  # use by tabulate
@@ -84,11 +85,7 @@ def args_line2dict(argv: str, output_dict: dict):
 def generate_output(input_file: str, output_file: str, var_dict: dict):
     try:
         with open(input_file, 'r')as ifile:
-            ifile.seek(0, os.SEEK_END)
-            flen = ifile.tell()
-            ifile.seek(0, os.SEEK_SET)
-            ifile_content = ifile.read(flen)
-
+            ifile_content = fread_all(ifile)
         if ifile_content is None:
             return
         for k, v in var_dict.items():
@@ -100,10 +97,17 @@ def generate_output(input_file: str, output_file: str, var_dict: dict):
         exit(2)
 
 
-def wrap_blank(input: str) -> str:
-    if input is None or len(input) == 0:
+def wrap_blank(input_str: str) -> str:
+    if input_str is None or len(input_str) == 0:
         return '''(blank string)'''
-    return input
+    return input_str
+
+
+def fread_all(f: typing.TextIO) -> typing.AnyStr:
+    f.seek(0, os.SEEK_END)
+    flen = f.tell()
+    f.seek(0, os.SEEK_SET)
+    return f.read(flen)
 
 
 def main():
@@ -118,8 +122,9 @@ def main():
 
     try:
         with open(cmd_args.template) as file:
-            for line in file.readlines():
-                result = regex.search(line)
+            template_file_content = fread_all(file)
+            match_iter = regex.finditer(template_file_content)
+            for result in match_iter:
                 if result:
                     result_dict = parse_tokens(result.groupdict())
                     todo_list.append(result_dict)
