@@ -2,8 +2,20 @@
 
 import re
 import argparse
-import sys
 import os
+import sys
+
+try:
+    import wcwidth  # use by tabulate
+except ImportError:
+    print("module: `wcwidth` not load, it can bring some problem unexpected with some language", end='\n\n',
+          file=sys.stderr)
+
+try:
+    from tabulate import tabulate
+except ImportError:
+    print("module: `tabulate` not load, run `pip install tabulate` to install...", end='\n\n', file=sys.stderr)
+    exit(4)
 
 
 # parse program startup args
@@ -11,24 +23,26 @@ def parse_args():
     parser = argparse.ArgumentParser(description="godefine")
     group = parser.add_argument_group()
     #
-    group.add_argument('-iv', '--input_vars', type=str, help='use var is specified file')
+    group.add_argument('-i', '--input_vars', type=str, help='use var is specified file')
     group.add_argument('-v', '--vars', type=str, help='use var in command line', nargs='*')
     group.add_argument('-t', '--template', type=str, help='template file', required=True)
-    group.add_argument('-o', '--output', type=str, help='output file name')
+    group.add_argument('-o', '--output', type=str, help='output file name', required=True)
     #
     group.add_argument('-f', '--force',
                        default=False,
-                       action='store_false',
+                       action='store_true',
                        help='force generate code,skip any error')
     #
     group.required = False
     args = parser.parse_args()
-
-    print("input_vars file: {}".format(args.input_vars))
-    print("vars: {}".format(args.vars))
-    print("force: {}".format(args.force))
-    print("template file: {}".format(args.template))
-    print()
+    print("Environment:")
+    print(tabulate([
+        ("input var's file", args.input_vars),
+        ("var from command-line", '\n'.join(args.vars or [])),
+        ("force execute?", args.force),
+        ("template file", args.template),
+        ("output file", args.output),
+    ], tablefmt='grid', missingval='❌'), end='\n\n')
     return args
 
 
@@ -40,24 +54,6 @@ def parse_tokens(regex_result: dict) -> dict:
     }
 
 
-# calc align
-def get_align(todo_list):
-    var_name_align = 0
-    comment_align = 0
-    for it in todo_list:
-        var_name_len = len(it['var_name'])
-        # skip ,if name is empty
-        if var_name_len == 0:  # todo if not force, just report an error
-            continue
-        if var_name_len > var_name_align:
-            var_name_align = var_name_len
-
-        comment_val_len = len(it['comment'])
-        if comment_val_len > comment_align:
-            comment_align = comment_val_len
-    return var_name_align, comment_align
-
-
 def grab_vars(input_file: str, var_line: list) -> dict:
     if var_line is None:
         var_line = {}
@@ -66,7 +62,8 @@ def grab_vars(input_file: str, var_line: list) -> dict:
     if input_file:
         with open(input_file) as var_file:
             for line in var_file.readlines():
-                args_line2dict(line, out)
+                strip_n = line.rstrip('\n')
+                args_line2dict(strip_n, out)
     for it in var_line:
         args_line2dict(it, out)
     return out
@@ -80,18 +77,28 @@ def args_line2dict(argv: str, output_dict: dict):
 
 
 def generate_output(input_file: str, output_file: str, var_dict: dict):
-    with open(input_file, 'r')as ifile:
-        ifile.seek(0, os.SEEK_END)
-        flen = ifile.tell()
-        ifile.seek(0, os.SEEK_SET)
-        ifile_content = ifile.read(flen)
+    try:
+        with open(input_file, 'r')as ifile:
+            ifile.seek(0, os.SEEK_END)
+            flen = ifile.tell()
+            ifile.seek(0, os.SEEK_SET)
+            ifile_content = ifile.read(flen)
 
-    if ifile_content is None:
-        return
-    for k, v in var_dict.items():
-        ifile_content = re.sub(r'\${%s}' % k, v, ifile_content)
-    with open(output_file, 'w') as ofile:
-        ofile.write(ifile_content)
+        if ifile_content is None:
+            return
+        for k, v in var_dict.items():
+            ifile_content = re.sub(r'\${%s}' % k, v, ifile_content)
+        with open(output_file, 'w') as ofile:
+            ofile.write(ifile_content)
+    except Exception as e:
+        print("❗❗❗generate output failed:%s" % e)
+        exit(2)
+
+
+def wrap_blank(input: str) -> str:
+    if input is None or len(input) == 0:
+        return '''(blank string)'''
+    return input
 
 
 def main():
@@ -99,45 +106,61 @@ def main():
     user_specified_vars = grab_vars(cmd_args.input_vars, cmd_args.vars)
 
     regex = re.compile(
-        r'''(?P<var_name>((?<={)\w+(?=}))).*(?<=//)\s+(?P<comment>(\b.*))(?=(@default=))\5(?P<default_val>(.*))(?=;)'''
-        r'''|((?P<var_name2>((?<={)\w+(?=}))).*(?<=//)\s+(?P<comment2>(\b.*)))''')
+        r'''(?P<var_name>((?<={).*(?=}))).*(?<=//)\s?(?P<comment>(\b.*))(?=(@default=))\5(?P<default_val>(.*))(?=;)'''
+        r'''|((?P<var_name2>((?<={).*(?=}))).*(?<=//)\s?(?P<comment2>(\b.*)))''')
 
     todo_list = []
 
-    with open("consts.go.template") as file:
-        for line in file.readlines():
-            result = regex.search(line)
-            if result:
-                result_dict = parse_tokens(result.groupdict())
-                todo_list.append(result_dict)
+    try:
+        with open(cmd_args.template) as file:
+            for line in file.readlines():
+                result = regex.search(line)
+                if result:
+                    result_dict = parse_tokens(result.groupdict())
+                    todo_list.append(result_dict)
+    except Exception as e:
+        print("❗❗❗open file:%s filed, reason:%s" % (cmd_args.template, e))
+        exit(1)
 
-    var_name_align, comment_align = get_align(todo_list)
-
-    vars_no_ready = []
-
+    vars_not_ready = []
+    #
+    table_header = ['var_name', 'comment', 'default', 'current', 'ready?']
+    table_data = []
+    # prepare table
     for it in todo_list:
         var_name = it['var_name']
         default_val = it['default']
         comment = it['comment']
-        print('[%s]:\t%-*s' %
-              (str(var_name).center(var_name_align + 2), comment_align, comment), end='')
-        if default_val:
-            print("(default:%s)" % it['default'])
-            default_val = it['default']
-        else:
-            print()
+        #
         if default_val is not None and var_name not in user_specified_vars:
             user_specified_vars[var_name] = default_val
-        if default_val is None and user_specified_vars.get(var_name) is None:
-            vars_no_ready.append(var_name)
+        #
+        user_specified_val = user_specified_vars.get(var_name)
+        #
 
-    print()
-    if len(vars_no_ready) != 0:
-        print("error: you must specify manual:", ','.join(vars_no_ready))
-        return
+        table_data.append((var_name,
+                           wrap_blank(comment),
+                           wrap_blank(default_val),
+                           wrap_blank(user_specified_val),
+                           ('✅' if default_val is not None or user_specified_val is not None else None)))
+        #
+        if user_specified_val is None:
+            vars_not_ready.append(var_name)
+    #
+    print("Processing....")
+    #
+    print(tabulate(table_data, headers=table_header, tablefmt='grid', missingval='❌'), end='\n\n')
 
-    generate_output(cmd_args.template, "output.go", user_specified_vars)
-    print("exit...")
+    # generate failed vars
+    if len(vars_not_ready) != 0:
+        print("❗❗❗error: you must specify manual:", ','.join(vars_not_ready))
+        if not cmd_args.force:
+            exit(3)
+        print("❗❗❗warning: some vars not specified, force generate output...")
+    #
+    generate_output(cmd_args.template, cmd_args.output, user_specified_vars)
+    #
+    print("\n🎉🎉🎉 Success! 🎉🎉🎉")
 
 
 if __name__ == '__main__':
