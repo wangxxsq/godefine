@@ -25,6 +25,10 @@ pip3 install -r requirements.txt
 |wcwidth|❗|
 |tabulate|✅|
 
+although `wcwidth` is optional, but it's higly recommended to install.
+
+`wcwidth` help `tabulate` handle pagecode issue.
+
 
 
 ## Get Start
