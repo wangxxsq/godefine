@@ -63,12 +63,40 @@ it's hard to handle with it.
 define your vars in `config.in`
 
 ```ini
-foo=abc 112 333
-bar=whatever
+foo="abc 112 333"
+bar=    bar
+web site=https://www.google.com
+handsome author=ooopSnake 🎉
+
 ```
 
+template file `env.go.template`:
+
+```go
+package env
+
+const Foo =  "abc 112 333" // foo??? @default="中文~";
+var Website = "https://www.google.com" // homepage
+const Bar = "    bar" // barss
+var Author =  ooopSnake 🎉 // author name @default=snake!;
+
+```
+
+run `godefine`
+
 ```bash
-godefine.py -iv config.in -t sample.go.template -o sample.go 
+godefine.py -i config.in -t env.go.template -o env.go 
+```
+
+output `env.go`:
+
+```go
+package env
+
+const Foo =  "abc 112 333" // foo??? @default="中文~";
+var Website = "https://www.google.com" // homepage
+const Bar = "    bar" // barss
+var Author =  "ooopSnake 🎉" // author name @default=snake!;
 ```
 
 as you can see ,foo's value has some `escape` char.
