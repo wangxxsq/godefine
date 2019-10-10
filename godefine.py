@@ -24,10 +24,10 @@ def parse_args():
     parser = argparse.ArgumentParser(description="godefine")
     group = parser.add_argument_group()
     #
-    group.add_argument('-i', '--input_vars', type=str, help='use var is specified file')
-    group.add_argument('-v', '--vars', type=str, help='use var in command line', nargs='*')
-    group.add_argument('-t', '--template', type=str, help='template file', required=True)
-    group.add_argument('-o', '--output', type=str, help='output file name', required=True)
+    group.add_argument('-i', '--input_vars', type=typing.AnyStr, help='use var is specified file')
+    group.add_argument('-v', '--vars', type=typing.AnyStr, help='use var in command line', nargs='*')
+    group.add_argument('-t', '--template', type=typing.AnyStr, help='template file', required=True)
+    group.add_argument('-o', '--output', type=typing.AnyStr, help='output file name', required=True)
     group.add_argument('--dryrun',
                        default=False,
                        action='store_true',
@@ -47,12 +47,12 @@ def parse_args():
         ("force execute?", args.force),
         ("template file", args.template),
         ("output file", args.output),
-        ("dry-run", args.dryrun),
+        ("dry-run? just print vars", args.dryrun),
     ], tablefmt='grid', missingval='❌'), end='\n\n')
     return args
 
 
-def parse_tokens(regex_result: dict) -> dict:
+def parse_tokens(regex_result: typing.Dict) -> typing.Dict:
     return {
         'var_name': regex_result.get('var_name2') or regex_result.get('var_name'),
         'comment': regex_result.get('comment2') or regex_result.get('comment'),
@@ -60,7 +60,7 @@ def parse_tokens(regex_result: dict) -> dict:
     }
 
 
-def grab_vars(input_file: str, var_line: list) -> dict:
+def grab_vars(input_file: typing.AnyStr, var_line: list) -> typing.Dict:
     if var_line is None:
         var_line = {}
     out = {}
@@ -75,14 +75,14 @@ def grab_vars(input_file: str, var_line: list) -> dict:
     return out
 
 
-def args_line2dict(argv: str, output_dict: dict):
+def args_line2dict(argv: typing.AnyStr, output_dict: typing.Dict):
     r = argv.split('=', maxsplit=1)
     if len(r) != 2:
         return
     output_dict[r[0]] = r[1]
 
 
-def generate_output(input_file: str, output_file: str, var_dict: dict):
+def generate_output(input_file: typing.AnyStr, output_file: typing.AnyStr, var_dict: typing.typing.Dict):
     try:
         with open(input_file, 'r')as ifile:
             ifile_content = fread_all(ifile)
@@ -97,7 +97,7 @@ def generate_output(input_file: str, output_file: str, var_dict: dict):
         exit(2)
 
 
-def wrap_blank(input_str: str) -> str:
+def wrap_blank(input_str: typing.AnyStr) -> typing.AnyStr:
     if input_str is None or len(input_str) == 0:
         return '''(blank string)'''
     return input_str
