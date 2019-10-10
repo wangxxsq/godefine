@@ -78,7 +78,7 @@ godefine.py -v foo=11 bar=222 -t sample.go.template -o sample.go
 ```
 
 this way is not suggested.
-if your value has an escape for some special char,
+if your value have such special char eg: `blank str`,`"`, 
 it's hard to handle with it.
 
 ### use vars form specified file (Suggest :smirk: :thumbsup:)
@@ -122,7 +122,7 @@ const Bar = "    bar" // barss
 var Author =  "ooopSnake 🎉" // author name @default=snake!;
 ```
 
-as you can see ,foo's value has some `escape` char.
+as you can see ,foo's value has some `space(blank)` char.
 
 `godefine` script will handle them correctly.
 
