@@ -27,6 +27,10 @@ def parse_args():
     group.add_argument('-v', '--vars', type=str, help='use var in command line', nargs='*')
     group.add_argument('-t', '--template', type=str, help='template file', required=True)
     group.add_argument('-o', '--output', type=str, help='output file name', required=True)
+    group.add_argument('--dryrun',
+                       default=False,
+                       action='store_true',
+                       help='dry run, just print vars without generate output')
     #
     group.add_argument('-f', '--force',
                        default=False,
@@ -42,6 +46,7 @@ def parse_args():
         ("force execute?", args.force),
         ("template file", args.template),
         ("output file", args.output),
+        ("dry-run", args.dryrun),
     ], tablefmt='grid', missingval='❌'), end='\n\n')
     return args
 
@@ -149,7 +154,11 @@ def main():
     #
     print("Processing....")
     #
-    print(tabulate(table_data, headers=table_header, tablefmt='grid', missingval='❌'), end='\n\n')
+    print(tabulate(table_data,
+                   headers=table_header,
+                   tablefmt='grid',
+                   missingval='❌'),
+          end='\n\n')
 
     # generate failed vars
     if len(vars_not_ready) != 0:
@@ -158,7 +167,10 @@ def main():
             exit(3)
         print("❗❗❗warning: some vars not specified, force generate output...")
     #
-    generate_output(cmd_args.template, cmd_args.output, user_specified_vars)
+    if not cmd_args.dryrun:
+        generate_output(cmd_args.template, cmd_args.output, user_specified_vars)
+    else:
+        print("🙈🙈🙈skip generate step...")
     #
     print("\n🎉🎉🎉 Success! 🎉🎉🎉")
 
