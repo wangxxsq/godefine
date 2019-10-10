@@ -8,6 +8,25 @@ replace marco in template,and generate a new go file
 ![WTFPL](http://www.wtfpl.net/wp-content/uploads/2012/12/wtfpl-badge-4.png)
 
 
+## Install Guide
+
+### FIRST: THIS SCRIPT BASED ON PYTHON3!
+
+
+```bash
+pip3 install -r requirements.txt
+```
+
+### Modules
+
+
+|Module|IsRequired?|
+|---|--- |
+|wcwidth|❗|
+|tabulate|✅|
+
+
+
 ## Get Start
 
 
