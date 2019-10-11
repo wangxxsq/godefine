@@ -60,7 +60,7 @@ def parse_tokens(regex_result: typing.Dict) -> typing.Dict:
     }
 
 
-def grab_vars(input_file: typing.AnyStr, var_line: list) -> typing.Dict:
+def grab_vars(input_file: typing.AnyStr, var_line: typing.list) -> typing.Dict:
     if var_line is None:
         var_line = {}
     out = {}
